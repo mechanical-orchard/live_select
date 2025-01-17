@@ -54,6 +54,7 @@
       phx_target: @myself,
       phx_change: "change",
       disabled: @disabled,
+      name: @field.name |> String.replace_trailing("]", "_text_input]"),
       autocomplete: "off",
       phx_focus: "focus",
       phx_click: "click",
@@ -79,7 +80,8 @@
     <%= hidden_input(@field.form, @field.field,
       disabled: @disabled,
       class: "single-mode",
-      value: value(@selection)
+      value: value(@selection),
+      name: @field.name
     ) %>
   <% else %>
     <!-- TODO: the stuff below could be replaced with a single hidden, readonly multiselect, but updates don't quite work. So we resort to hidden inputs for now -->
