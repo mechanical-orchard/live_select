@@ -1,4 +1,20 @@
-* remove dependency from Jason library
+## 1.6.0 (2025-04-13)
+
+* add ability to disable options
+
+## 1.5.5 (2025-03-31)
+
+* make clear buttons also honor the disabled attribute
+* remember entered text when blurring away from the element
+
+## 1.5.4 (2025-01-29)
+
+* Fix [bug](https://github.com/maxmarcon/live_select/issues/98) causing selection recovery to fail if Phoenix uses the built-in JSON module from Elixir 1.18
+
+## 1.5.3 (2025-01-27)
+
+* Fix [bug](https://github.com/maxmarcon/live_select/issues/96) that causes selection recovery to fail when `input_for` is used to render the component
+* Remove dependency from `Jason` library
 
 ## 1.5.2 (2024-12-28)
 

@@ -19,6 +19,7 @@ defmodule LiveSelect.Component do
     clear_button_extra_class: nil,
     clear_tag_button_class: nil,
     clear_tag_button_extra_class: nil,
+    current_text: nil,
     user_defined_options: false,
     container_class: nil,
     container_extra_class: nil,
@@ -241,7 +242,7 @@ defmodule LiveSelect.Component do
        selection:
          Enum.map(socket.assigns.selection, fn %{value: value} ->
            Enum.find(options, fn %{value: option_value} ->
-             json.encode(option_value) == json.encode(value)
+             json.encode!(option_value) == json.encode!(value)
            end)
          end)
          |> Enum.filter(& &1)
@@ -449,12 +450,20 @@ defmodule LiveSelect.Component do
   end
 
   defp select(
+         socket,
+         %{disabled: true} = _selected,
+         _extra_params
+       ) do
+    socket
+  end
+
+  defp select(
          %{assigns: %{selection: selection, max_selectable: max_selectable}} = socket,
          _selected,
          _extra_params
        )
        when max_selectable > 0 and length(selection) >= max_selectable do
-    assign(socket, hide_dropdown: not quick_tags_mode?(socket))
+    socket
   end
 
   defp select(socket, selected, extra_params) do
@@ -519,6 +528,7 @@ defmodule LiveSelect.Component do
       %{
         id: socket.assigns.id,
         mode: socket.assigns.mode,
+        current_text: socket.assigns.current_text,
         selection: socket.assigns.selection,
         parent_event: parent_event
       }
@@ -586,6 +596,41 @@ defmodule LiveSelect.Component do
     )
   end
 
+  defp normalize_option(option) when is_list(option) do
+    if Keyword.keyword?(option) do
+      Map.new(option)
+      |> normalize_option()
+    else
+      :error
+    end
+  end
+
+  defp normalize_option(option) when is_map(option) do
+    case option do
+      %{key: key, value: _value} = option ->
+        {:ok, Enum.into(option, %{label: key, disabled: false})}
+
+      %{value: value} = option ->
+        {:ok, Enum.into(option, %{label: value, disabled: false})}
+
+      _ ->
+        :error
+    end
+  end
+
+  defp normalize_option(option) when is_tuple(option) do
+    case option do
+      {label, value} ->
+        {:ok, %{label: label, value: value, disabled: false}}
+
+      {label, value, disabled} ->
+        {:ok, %{label: label, value: value, disabled: disabled}}
+
+      _ ->
+        :error
+    end
+  end
+
   defp normalize_option(option) do
     case option do
       nil ->
@@ -594,25 +639,8 @@ defmodule LiveSelect.Component do
       "" ->
         {:ok, nil}
 
-      %{key: key, value: _value} = option ->
-        {:ok, Map.put_new(option, :label, key)}
-
-      %{value: value} = option ->
-        {:ok, Map.put_new(option, :label, value)}
-
-      option when is_list(option) ->
-        if Keyword.keyword?(option) do
-          Map.new(option)
-          |> normalize_option()
-        else
-          :error
-        end
-
-      {label, value} ->
-        {:ok, %{label: label, value: value}}
-
       option when is_binary(option) or is_atom(option) or is_number(option) ->
-        {:ok, %{label: option, value: option}}
+        {:ok, %{label: option, value: option, disabled: false}}
 
       _ ->
         :error
@@ -712,7 +740,8 @@ defmodule LiveSelect.Component do
     options
     |> Enum.with_index()
     |> Enum.reject(fn {opt, _} ->
-      active_option == opt || (mode != :quick_tags && already_selected?(opt, selection))
+      active_option == opt || (mode != :quick_tags && already_selected?(opt, selection)) ||
+        Map.get(opt, :disabled)
     end)
     |> Enum.map(fn {_, idx} -> idx end)
     |> Enum.find(active_option, &(&1 > active_option))
@@ -737,7 +766,8 @@ defmodule LiveSelect.Component do
     |> Enum.with_index()
     |> Enum.reverse()
     |> Enum.reject(fn {opt, _} ->
-      active_option == opt || (mode != :quick_tags && already_selected?(opt, selection))
+      active_option == opt || (mode != :quick_tags && already_selected?(opt, selection)) ||
+        Map.get(opt, :disabled)
     end)
     |> Enum.map(fn {_, idx} -> idx end)
     |> Enum.find(active_option, &(&1 < active_option || active_option == -1))

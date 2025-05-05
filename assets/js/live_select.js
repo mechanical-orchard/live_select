@@ -88,14 +88,14 @@ export default {
                     this.pushEventToParent(event, payload)
                 }
             })
-            this.handleEvent("select", ({id, selection, mode, input_event, parent_event}) => {
+            this.handleEvent("select", ({id, selection, mode, current_text, input_event, parent_event}) => {
                 if (this.el.id === id) {
                     this.selection = selection
                     if (mode === "single") {
-                        const label = selection.length > 0 ? selection[0].label : null
+                        const label = selection.length > 0 ? selection[0].label : current_text
                         this.setInputValue(label)
                     } else {
-                        this.setInputValue(null)
+                        this.setInputValue(current_text)
                     }
                     if (input_event) {
                         this.inputEvent(selection, mode)
@@ -121,7 +121,7 @@ export default {
         },
         reconnected() {
             if (this.selection && this.selection.length > 0) {
-                this.pushEventTo(this.el, "selection_recovery", this.selection)
+                this.pushEventTo(this.el.id, "selection_recovery", this.selection)
             }
         }
     }

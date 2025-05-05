@@ -18,7 +18,7 @@
             <%= render_slot(@tag, option) %>
           <% end %>
           <button
-            :if={!option[:sticky]}
+            :if={!option[:sticky] && !@disabled}
             type="button"
             data-idx={idx}
             class={
@@ -61,7 +61,7 @@
       phx_blur: "blur",
       value: label(@mode, @selection)
     ) %>
-    <%= if @mode == :single && @allow_clear && Enum.any?(@selection) do %>
+    <%= if @mode == :single && @allow_clear && !@disabled && Enum.any?(@selection) do %>
       <button
         type="button"
         phx-click="clear"
@@ -112,6 +112,9 @@
       <%= for {option, idx} <- Enum.with_index(@options) do %>
         <li class={
           cond do
+            option.disabled ->
+              class(@style, :unavailable_option, @unavailable_option_class)
+
             already_selected?(option, @selection) ->
               class(@style, :selected_option, @selected_option_class)
 
